@@ -89,7 +89,7 @@ Seven phases (P0–P6), each with a hard exit criterion. No phase starts until t
 - [ ] Firefly III reachable at `http://firefly.<cachyos-hostname>.ts.net` from the phone's Tailscale.
 - [x] `docker compose ps` shows `app` and `cron` running; `db` absent. — verified 2026-10-12 (`app` healthy, `cron` up, no `db`).
 - [x] Flutter project builds (`flutter build apk --debug` succeeds). — verified 2026-10-12, exit 0. Use `/mnt/data/opencode/tools/flutter` (3.47.7); the `flutter` on PATH is 3.29.2 and cannot resolve `sdk: ^3.13.5` (REGRESSION-LOG R5).
-- [ ] Golden fixtures committed and passing a smoke test that loads them. — fixtures captured + smoke test green (`app/test/api_fixtures_smoke_test.dart`, 11 tests); **commit still pending** (no git repo yet).
+- [x] Golden fixtures committed and passing a smoke test that loads them. — 17 fixtures + `manifest.json` in `app/test/fixtures/api/`, smoke test `app/test/api_fixtures_smoke_test.dart` (11 tests) green; committed `dc35ed8` (2026-10-12) with `.credentials`/`.env`/`tmp/` gitignored and a staged-content secret scan passing.
 
 ---
 
