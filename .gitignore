@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------------------
+# Root gitignore — safety net across the whole repo.
+# Per-directory rules also exist (app/.gitignore, infra/firefly/.gitignore);
+# these entries are the backstop that stops a secret from ever reaching an
+# index if someone moves a file out of its guarded directory.
+# ---------------------------------------------------------------------------
+
+# Local secrets + credential stores (PAT, APP_KEY, cookie jars, .pass/.pat)
+.credentials
+.env
+.env.*
+!.env.example
+**/.credentials
+**/.env
+*.sqlite
+
+# Docker / compose runtime state
+infra/firefly/tmp/
+*.pid
+
+# Build output
+app/build/
+app/.dart_tool/
+app/.flutter-plugins-dependencies
+app/.idea/
+app/*.iml
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Logs
+*.log

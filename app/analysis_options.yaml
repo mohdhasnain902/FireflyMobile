@@ -1,0 +1,23 @@
+# Analysis config: very_good_analysis is a strict superset of flutter_lints.
+# Keep every rule on — failures are fixed, never suppressed project-wide.
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - '**/*.g.dart'
+    - '**/*.freezed.dart'
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # Codebase-wide conventions beyond very_good_analysis.
+    prefer_single_quotes: true
+    always_declare_return_types: true
+    directives_ordering: true
+    avoid_dynamic_calls: true
+    lines_longer_than_80_chars: true

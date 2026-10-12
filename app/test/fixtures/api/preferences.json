@@ -1,0 +1,214 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "en_US",
+        "name": "language",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "1",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/1"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "<redacted>",
+        "name": "access_token",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "2",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/2"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "1M",
+        "name": "viewRange",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "3",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/3"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "en_US",
+        "name": "locale",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "4",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/4"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "0.77136500 1791818967",
+        "name": "lastActivity",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "5",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/5"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": false,
+        "name": "anonymous",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "6",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/6"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": 10,
+        "name": "list-length",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "7",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/7"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "browser",
+        "name": "darkMode",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "8",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/8"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": false,
+        "name": "convert_to_primary",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "9",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/9"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "<redacted>",
+        "name": "mfa_recovery",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "10",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/10"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "<redacted>",
+        "name": "slack_webhook_url",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "11",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/11"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "<redacted>",
+        "name": "pushover_app_token",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "12",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/12"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": "<redacted>",
+        "name": "pushover_user_token",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "13",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/13"
+      },
+      "type": "preferences"
+    },
+    {
+      "attributes": {
+        "created_at": "<timestamp>",
+        "data": 50,
+        "name": "listPageSize",
+        "updated_at": "<timestamp>",
+        "user_group_id": null
+      },
+      "id": "14",
+      "links": {
+        "self": "http://localhost:8080/api/v1/preferences/14"
+      },
+      "type": "preferences"
+    }
+  ],
+  "links": {
+    "first": "http://localhost:8080/api/v1/preferences?limit=50&page=1",
+    "last": "http://localhost:8080/api/v1/preferences?limit=50&page=1",
+    "self": "http://localhost:8080/api/v1/preferences?limit=50&page=1"
+  },
+  "meta": {
+    "pagination": {
+      "count": 14,
+      "current_page": 1,
+      "per_page": 50,
+      "total": 14,
+      "total_pages": 1
+    }
+  }
+}

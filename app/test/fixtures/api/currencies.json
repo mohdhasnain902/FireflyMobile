@@ -1,0 +1,961 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "code": "ARS",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Argentinian Peso",
+        "native": false,
+        "primary": false,
+        "symbol": "$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "17",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/17"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/17"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "AUD",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Australian dollar",
+        "native": false,
+        "primary": false,
+        "symbol": "A$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "22",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/22"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/22"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "BRL",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Brazilian real",
+        "native": false,
+        "primary": false,
+        "symbol": "R$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "13",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/13"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/13"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "CAD",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Canadian dollar",
+        "native": false,
+        "primary": false,
+        "symbol": "C$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "14",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/14"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/14"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "CHF",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Swiss franc",
+        "native": false,
+        "primary": false,
+        "symbol": "CHF",
+        "updated_at": "<timestamp>"
+      },
+      "id": "33",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/33"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/33"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "CLP",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Chilean Peso",
+        "native": false,
+        "primary": false,
+        "symbol": "$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "19",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/19"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/19"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "CNY",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Chinese yuan",
+        "native": false,
+        "primary": false,
+        "symbol": "¥",
+        "updated_at": "<timestamp>"
+      },
+      "id": "28",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/28"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/28"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "COP",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Colombian Peso",
+        "native": false,
+        "primary": false,
+        "symbol": "$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "18",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/18"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/18"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "CZK",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Czech koruna",
+        "native": false,
+        "primary": false,
+        "symbol": "Kč",
+        "updated_at": "<timestamp>"
+      },
+      "id": "36",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/36"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/36"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "DKK",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Dansk krone",
+        "native": false,
+        "primary": false,
+        "symbol": "kr.",
+        "updated_at": "<timestamp>"
+      },
+      "id": "7",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/7"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/7"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "EGP",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Egyptian pound",
+        "native": false,
+        "primary": false,
+        "symbol": "E£",
+        "updated_at": "<timestamp>"
+      },
+      "id": "24",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/24"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/24"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "EUR",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": true,
+        "enabled": true,
+        "name": "Euro",
+        "native": true,
+        "primary": true,
+        "symbol": "€",
+        "updated_at": "<timestamp>"
+      },
+      "id": "1",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/1"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/1"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "GBP",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "British Pound",
+        "native": false,
+        "primary": false,
+        "symbol": "£",
+        "updated_at": "<timestamp>"
+      },
+      "id": "3",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/3"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/3"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "HKD",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Hong Kong dollar",
+        "native": false,
+        "primary": false,
+        "symbol": "HK$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "35",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/35"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/35"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "HRK",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Croatian kuna",
+        "native": false,
+        "primary": false,
+        "symbol": "kn",
+        "updated_at": "<timestamp>"
+      },
+      "id": "34",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/34"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/34"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "HUF",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Hungarian forint",
+        "native": false,
+        "primary": false,
+        "symbol": "Ft",
+        "updated_at": "<timestamp>"
+      },
+      "id": "2",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/2"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/2"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "IDR",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Indonesian rupiah",
+        "native": false,
+        "primary": false,
+        "symbol": "Rp",
+        "updated_at": "<timestamp>"
+      },
+      "id": "21",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/21"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/21"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "ILS",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Israeli new shekel",
+        "native": false,
+        "primary": false,
+        "symbol": "₪",
+        "updated_at": "<timestamp>"
+      },
+      "id": "32",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/32"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/32"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "INR",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Indian rupee",
+        "native": false,
+        "primary": false,
+        "symbol": "₹",
+        "updated_at": "<timestamp>"
+      },
+      "id": "31",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/31"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/31"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "ISK",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Íslensk króna",
+        "native": false,
+        "primary": false,
+        "symbol": "kr.",
+        "updated_at": "<timestamp>"
+      },
+      "id": "8",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/8"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/8"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "JPY",
+        "created_at": "<timestamp>",
+        "decimal_places": 0,
+        "default": false,
+        "enabled": false,
+        "name": "Japanese yen",
+        "native": false,
+        "primary": false,
+        "symbol": "¥",
+        "updated_at": "<timestamp>"
+      },
+      "id": "27",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/27"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/27"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "KRW",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "South Korean won",
+        "native": false,
+        "primary": false,
+        "symbol": "₩",
+        "updated_at": "<timestamp>"
+      },
+      "id": "29",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/29"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/29"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "KZT",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Kazakhstani tenge",
+        "native": false,
+        "primary": false,
+        "symbol": "₸",
+        "updated_at": "<timestamp>"
+      },
+      "id": "37",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/37"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/37"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "MAD",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Moroccan dirham",
+        "native": false,
+        "primary": false,
+        "symbol": "DH",
+        "updated_at": "<timestamp>"
+      },
+      "id": "25",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/25"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/25"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "MXN",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Mexican peso",
+        "native": false,
+        "primary": false,
+        "symbol": "MX$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "15",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/15"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/15"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "NOK",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Norsk krone",
+        "native": false,
+        "primary": false,
+        "symbol": "kr.",
+        "updated_at": "<timestamp>"
+      },
+      "id": "9",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/9"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/9"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "NZD",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "New Zealand dollar",
+        "native": false,
+        "primary": false,
+        "symbol": "NZ$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "23",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/23"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/23"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "PEN",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Peruvian Sol",
+        "native": false,
+        "primary": false,
+        "symbol": "S/",
+        "updated_at": "<timestamp>"
+      },
+      "id": "16",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/16"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/16"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "PLN",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Polish złoty",
+        "native": false,
+        "primary": false,
+        "symbol": "zł",
+        "updated_at": "<timestamp>"
+      },
+      "id": "5",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/5"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/5"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "RON",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Romanian leu",
+        "native": false,
+        "primary": false,
+        "symbol": "lei",
+        "updated_at": "<timestamp>"
+      },
+      "id": "11",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/11"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/11"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "RSD",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Serbian Dinar",
+        "native": false,
+        "primary": false,
+        "symbol": "RSD",
+        "updated_at": "<timestamp>"
+      },
+      "id": "39",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/39"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/39"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "RUB",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Russian ruble",
+        "native": false,
+        "primary": false,
+        "symbol": "₽",
+        "updated_at": "<timestamp>"
+      },
+      "id": "30",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/30"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/30"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "SAR",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Saudi Riyal",
+        "native": false,
+        "primary": false,
+        "symbol": "SAR",
+        "updated_at": "<timestamp>"
+      },
+      "id": "38",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/38"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/38"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "SEK",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Svensk krona",
+        "native": false,
+        "primary": false,
+        "symbol": "kr.",
+        "updated_at": "<timestamp>"
+      },
+      "id": "10",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/10"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/10"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "THB",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Thai baht",
+        "native": false,
+        "primary": false,
+        "symbol": "฿",
+        "updated_at": "<timestamp>"
+      },
+      "id": "41",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/41"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/41"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "TRY",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Turkish lira",
+        "native": false,
+        "primary": false,
+        "symbol": "₺",
+        "updated_at": "<timestamp>"
+      },
+      "id": "6",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/6"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/6"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "TWD",
+        "created_at": "<timestamp>",
+        "decimal_places": 0,
+        "default": false,
+        "enabled": false,
+        "name": "New Taiwan Dollar",
+        "native": false,
+        "primary": false,
+        "symbol": "NT$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "40",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/40"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/40"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "UAH",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Ukrainian hryvnia",
+        "native": false,
+        "primary": false,
+        "symbol": "₴",
+        "updated_at": "<timestamp>"
+      },
+      "id": "4",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/4"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/4"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "USD",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "US Dollar",
+        "native": false,
+        "primary": false,
+        "symbol": "$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "12",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/12"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/12"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "UYU",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "Uruguayan Peso",
+        "native": false,
+        "primary": false,
+        "symbol": "$",
+        "updated_at": "<timestamp>"
+      },
+      "id": "20",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/20"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/20"
+      },
+      "type": "currencies"
+    },
+    {
+      "attributes": {
+        "code": "ZAR",
+        "created_at": "<timestamp>",
+        "decimal_places": 2,
+        "default": false,
+        "enabled": false,
+        "name": "South African rand",
+        "native": false,
+        "primary": false,
+        "symbol": "R",
+        "updated_at": "<timestamp>"
+      },
+      "id": "26",
+      "links": {
+        "0": {
+          "rel": "self",
+          "uri": "/currencies/26"
+        },
+        "self": "http://localhost:8080/api/v1/currencies/26"
+      },
+      "type": "currencies"
+    }
+  ],
+  "links": {
+    "first": "http://localhost:8080/api/v1/currencies?limit=50&page=1",
+    "last": "http://localhost:8080/api/v1/currencies?limit=50&page=1",
+    "self": "http://localhost:8080/api/v1/currencies?limit=50&page=1"
+  },
+  "meta": {
+    "pagination": {
+      "count": 41,
+      "current_page": 1,
+      "per_page": 50,
+      "total": 41,
+      "total_pages": 1
+    }
+  }
+}

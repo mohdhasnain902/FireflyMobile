@@ -1,0 +1,63 @@
+{
+  "data": {
+    "attributes": {
+      "account_number": "NL91ABNA0417164300",
+      "account_role": "defaultAsset",
+      "active": true,
+      "balance_difference": null,
+      "bic": null,
+      "created_at": "<timestamp>",
+      "credit_card_type": null,
+      "currency_code": "EUR",
+      "currency_decimal_places": 2,
+      "currency_id": "1",
+      "currency_name": "Euro",
+      "currency_symbol": "€",
+      "current_balance": "2450.01",
+      "current_balance_date": "<date>",
+      "debt_amount": null,
+      "iban": "NL91ABNA0417164300",
+      "include_net_worth": true,
+      "interest": null,
+      "interest_period": null,
+      "last_activity": "2026-10-03T00:00:00+05:00",
+      "latitude": null,
+      "liability_direction": null,
+      "liability_type": null,
+      "longitude": null,
+      "monthly_payment_date": null,
+      "name": "Checking",
+      "notes": null,
+      "object_group_id": null,
+      "object_group_order": null,
+      "object_group_title": null,
+      "object_has_currency_setting": true,
+      "opening_balance": null,
+      "opening_balance_date": null,
+      "order": 0,
+      "pc_balance_difference": null,
+      "pc_current_balance": null,
+      "pc_debt_amount": null,
+      "pc_opening_balance": null,
+      "pc_virtual_balance": null,
+      "primary_currency_code": "EUR",
+      "primary_currency_decimal_places": 2,
+      "primary_currency_id": "1",
+      "primary_currency_name": "Euro",
+      "primary_currency_symbol": "€",
+      "type": "asset",
+      "updated_at": "<timestamp>",
+      "virtual_balance": "0",
+      "zoom_level": null
+    },
+    "id": "1",
+    "links": {
+      "0": {
+        "rel": "self",
+        "uri": "/accounts/1"
+      },
+      "self": "http://localhost:8080/api/v1/accounts/1"
+    },
+    "type": "accounts"
+  }
+}

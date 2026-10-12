@@ -1,0 +1,5 @@
+{
+  "base_url": "http://localhost:8080",
+  "firefly_version": "6.7.9",
+  "note": "Regenerate with infra/firefly/capture_fixtures.sh"
+}

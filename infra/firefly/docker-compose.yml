@@ -1,0 +1,70 @@
+# Firefly III — local development instance for the mobile-app project.
+#
+# SQLite variant of the upstream compose file (firefly-iii/docker):
+#   - the MariaDB `db` service is removed; Firefly writes a single
+#     database.sqlite file into the named volume below.
+#   - the image is PINNED to an exact version tag. Never use `latest`:
+#     DESIGN R9 makes the golden-API-fixture contract depend on a fixed
+#     server version, and a silent upgrade would invalidate every fixture.
+#
+# Bump the pin deliberately (and re-capture fixtures) when upgrading.
+# Last verified stable tag: version-6.7.9 (released 2026-10-11).
+
+services:
+  app:
+    image: fireflyiii/core:version-6.7.9
+    hostname: app
+    container_name: firefly_iii_core
+    restart: unless-stopped
+    volumes:
+      - firefly_iii_upload:/var/www/html/storage/upload
+      # SQLite needs a writable storage/database dir; this named volume
+      # keeps the database across container recreation.
+      - firefly_iii_database:/var/www/html/storage/database
+    env_file: .env
+    networks:
+      - firefly_iii
+    ports:
+      - "8080:8080"
+    # First boot runs migrations; give it a long grace period before the
+    # healthcheck is allowed to fail the container.
+    #
+    # NOTE: this image ships `curl` but NOT `wget` (verified on 6.7.9), so the
+    # check must use curl. `/` answers 302 -> /register, which curl's `-f`
+    # treats as success (it only fails on >=400).
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "-o", "/dev/null", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+
+  # Recurring tasks (budget rollover, recurrence generation). Firefly itself
+  # does not self-schedule these; the cron container hits its own API.
+  # STATIC_CRON_TOKEN in .env must be exactly 32 characters.
+  cron:
+    image: alpine:3.20
+    restart: unless-stopped
+    container_name: firefly_iii_cron
+    env_file: .env
+    command:
+      - sh
+      - -c
+      - |
+        apk add --no-cache tzdata
+        ln -sf /usr/share/zoneinfo/$$TZ /etc/localtime || true
+        echo "0 3 * * * wget -qO- http://app:8080/api/v1/cron/$$STATIC_CRON_TOKEN; echo" | crontab - 
+        crond -f -L /dev/stdout
+    networks:
+      - firefly_iii
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  firefly_iii_upload:
+  firefly_iii_database:
+
+networks:
+  firefly_iii:
+    driver: bridge

@@ -1,0 +1,7 @@
+.env
+database.env
+*.sqlite
+
+# Local secrets + scratch (PAT / password / cookie jar / scraped HTML)
+.credentials
+tmp/
