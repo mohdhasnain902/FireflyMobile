@@ -126,6 +126,38 @@ rows read `data: "<redacted>"` while non-credential prefs (`language: en_US`,
 `test/api_fixtures_smoke_test.dart` → "secrets never enter committed fixtures"
 (2 tests).
 
+### Rotation — completed 2026-10-13
+
+**What the leaked value actually was.** Not the API bearer token. It was Firefly's
+**per-user cron token**, stored at `preferences.access_token` (JSON-encoded string,
+32 hex chars). It is a *separate* credential from `STATIC_CRON_TOKEN` in `.env`,
+which never leaked.
+
+**It was genuinely live.** Verified before rotating:
+
+| Call | Result |
+|---|---|
+| `GET /api/v1/cron/<leaked>` | **200** + real cron body |
+| `GET /api/v1/cron/<random 32-hex>` | 401 `Unauthenticated` |
+| `Authorization: Bearer <leaked>` | 401 (so it was never an API PAT) |
+
+**Fix / rotation steps.** No artisan command exists for this preference
+(`correction:access-tokens` targets Passport, not this row), so:
+1. Backed up the DB → `infra/firefly/tmp/database.sqlite.bak-20261013-132911`.
+2. `UPDATE preferences SET data = json_encode(<new 32-hex>) WHERE name = 'access_token'` via PDO inside the `app` container.
+3. `php artisan cache:clear` + `docker compose restart app`.
+
+**Verified after rotation:** old → **401**, new → **200**, `STATIC_CRON_TOKEN` →
+**200** (unaffected), API `PAT` → **200** (unaffected), `app` healthy, capture
+`--check` → 0, `flutter analyze` clean, `flutter test` 34/34. The new value is
+stored as `FIIII_CRON_TOKEN` in `infra/firefly/.credentials` (gitignored); a
+staged-content scan confirmed all four secrets appear in **0** files.
+
+**Side effect (legitimate, not a bug).** The app restart let Firefly run its
+user-group correction, backfilling `preferences.user_group_id` from `null` → `1`.
+That showed up as fixture drift in `--check` — fixed by re-capturing
+(`preferences.json`, 14 rows). Every other fixture was byte-identical.
+
 ---
 
 ## R5 — `flutter` on PATH is the wrong SDK for this project

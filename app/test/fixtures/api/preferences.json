@@ -6,7 +6,7 @@
         "data": "en_US",
         "name": "language",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "1",
       "links": {
@@ -20,7 +20,7 @@
         "data": "<redacted>",
         "name": "access_token",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "2",
       "links": {
@@ -34,7 +34,7 @@
         "data": "1M",
         "name": "viewRange",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "3",
       "links": {
@@ -48,7 +48,7 @@
         "data": "en_US",
         "name": "locale",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "4",
       "links": {
@@ -62,7 +62,7 @@
         "data": "0.77136500 1791818967",
         "name": "lastActivity",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "5",
       "links": {
@@ -76,7 +76,7 @@
         "data": false,
         "name": "anonymous",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "6",
       "links": {
@@ -90,7 +90,7 @@
         "data": 10,
         "name": "list-length",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "7",
       "links": {
@@ -104,7 +104,7 @@
         "data": "browser",
         "name": "darkMode",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "8",
       "links": {
@@ -118,7 +118,7 @@
         "data": false,
         "name": "convert_to_primary",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "9",
       "links": {
@@ -132,7 +132,7 @@
         "data": "<redacted>",
         "name": "mfa_recovery",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "10",
       "links": {
@@ -146,7 +146,7 @@
         "data": "<redacted>",
         "name": "slack_webhook_url",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "11",
       "links": {
@@ -160,7 +160,7 @@
         "data": "<redacted>",
         "name": "pushover_app_token",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "12",
       "links": {
@@ -174,7 +174,7 @@
         "data": "<redacted>",
         "name": "pushover_user_token",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "13",
       "links": {
@@ -188,7 +188,7 @@
         "data": 50,
         "name": "listPageSize",
         "updated_at": "<timestamp>",
-        "user_group_id": null
+        "user_group_id": 1
       },
       "id": "14",
       "links": {
