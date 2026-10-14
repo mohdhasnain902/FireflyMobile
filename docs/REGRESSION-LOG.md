@@ -189,6 +189,77 @@ The installed Dart was 3.7.2.
 
 ---
 
+## R6 — `Transaction` entity never compiled: missing `fireflyId`
+
+**Symptom.** The new `test/domain/entities/transaction_test.dart` failed to load:
+`lib/domain/entities/transaction.freezed.dart:241: Error: The non-abstract class
+'_Transaction' is missing implementations ... SyncBookkeeping.fireflyId`.
+
+**Root cause.** `Transaction` is the only entity whose factory constructor did not
+declare `String? fireflyId`, while `with _$Transaction, SyncBookkeeping` requires
+it (the mixin declares an abstract getter). Nothing had ever imported
+`lib/domain/entities/transaction.dart`, so the breakage stayed invisible until the
+first round-trip test did. Two contributing errors in the entity's own docs:
+it claimed "the schema has no column for the group id", but
+`syncBookkeepingColumns` (applied to `transactions` too — DESIGN §5.1 uses
+transactions as its *example* table) includes `firefly_id TEXT`, and DESIGN §7
+pull matching (`WHERE firefly_id = resource_id`) requires it. `toJsonApi`
+therefore also emitted `id: null`, which would have broken re-pull row matching.
+
+**Fix (followed the every-other-entity pattern exactly).**
+- Constructor: added `String? fireflyId` (after the required params, so
+  `always_put_required_named_parameters_first` holds).
+- `fromJsonApi`: `fireflyId: jsonApiId(member)` — member `id` is the group id.
+- `fromRow` / `toRow`: read / write the `firefly_id` column.
+- `toJsonApi`: `id: fireflyId` instead of `id: null`.
+- Doc comments corrected (group id *is* stored; DESIGN §5.1/§7 cited).
+- Regenerated freezed (`dart run build_runner build`; if a plain build no-ops on
+  stale cache, `dart run build_runner clean` first).
+
+**Tested.** `flutter test` 202/202 (all 14 entity round-trip suites),
+`flutter analyze` → *No issues found*.
+
+---
+
+## R7 — `Bill.next_expected_match` wrote epoch millis into a TEXT column
+
+**Symptom.** The new `test/domain/entities/entity_persistence_test.dart` failed its
+`Bill row survives a real SQLite round trip` case. The INSERT succeeded (SQLite
+accepted the integer), but re-parsing the row threw rather than returning a `Bill`.
+
+**Root cause.** Every date column in `lib/data/db/schema.dart` is TEXT and holds
+ISO-8601 text — `next_expected_match TEXT` (schema.dart:189) is no exception, and
+`opening_balance_date`, `start_date`, `target_date`, `recur_until` are all TEXT too.
+`Bill.toRow` was writing `nextExpectedMatch?.millisecondsSinceEpoch`, an `int`.
+SQLite's TEXT affinity coerces that integer to its decimal text form
+(`"1793481600000"`), so the column never held a real integer; `Bill.fromRow` then
+read it with an `as int?` cast, which throws a `TypeError` against that text.
+
+The bug is the same class as R6: nothing exercised `Bill` against a real table
+until the persistence suite did, and an entity-to-entity round trip cannot see it
+because it never crosses the storage layer.
+
+**Fix (matched the every-other-entity pattern).**
+- `Bill.toRow`: `'next_expected_match': dateTimeToIso(nextExpectedMatch)`.
+- `Bill.fromRow`: `isoToDateTime(row['next_expected_match'] as String?)`.
+- The sibling fields on the same entity already used
+  `isoJsonToDateTime` / `dateTimeToJson` for the JSON:API side, so only the
+  SQLite side was wrong. `dateTimeToIso` / `isoToDateTime` are the helpers every
+  other entity uses for row columns (`PiggyBank.target_date`, etc.).
+
+**How to avoid repeating it.** A date/time column is TEXT and takes
+`dateTimeToIso` on write and `isoToDateTime` on read. Never `millisecondsSinceEpoch`
+in `toRow`, and never `as int?` in `fromRow`, for a column declared TEXT. When a
+new column is added to `schema.dart`, pick the affinity that matches the helper
+you intend to call.
+
+**Tested.** `flutter test test/domain/entities/entity_persistence_test.dart` →
+15/15 (14 entity round trips + the required-fields-only row), which includes the
+failing-then-passing `Bill` case. Full `flutter test` → 217/217.
+`flutter analyze` → *No issues found*.
+
+---
+
 ## Open follow-up
 
 - `hooks.user_defines.sqlite3.source: sqlcipher` is global. Confirm the bundled

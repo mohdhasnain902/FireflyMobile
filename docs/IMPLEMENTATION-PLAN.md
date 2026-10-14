@@ -120,6 +120,25 @@ Seven phases (P0–P6), each with a hard exit criterion. No phase starts until t
 
 ### Tests
 - Round-trip: insert model → read back → assert deep equality (every entity).
+- Entity JSON:API/SQLite round-trip suites exist for **all 14 JSON:API
+  entities**: `app/test/domain/entities/{account,attachment,bill,budget,
+  budget_limit,category,currency,piggy_bank,recurrence,rule,rule_group,
+  subscription,tag,transaction}_test.dart`. Category is the template; the
+  others mirror it (11–14 tests each; envelope-helper group deliberately
+  omitted where irrelevant). Executed 2026-10-13: `flutter test` **202/202**,
+  `flutter analyze` **no issues**, every line ≤80 chars. `op_log_entry` and
+  `device_meta` are infra tables (not JSON:API entities) — covered by their
+  DAO tests instead.
+- Real-SQLite persistence suite:
+  `app/test/domain/entities/entity_persistence_test.dart` proves each entity's
+  `toRow`/`fromRow` agree with `lib/data/db/schema.dart`, not merely with each
+  other. Per-entity round trips pass even when `toRow` emits a column the DDL
+  never created, so this suite is the one that actually catches schema drift —
+  it caught R7 (`Bill.next_expected_match` writing epoch millis into a TEXT
+  column). 15 tests: 14 entities, each with every optional field populated,
+  plus one row carrying only required fields. Cases are records (`typedef
+  _Case`), not a wrapper class, so the loop stays free of the `dynamic` calls
+  `avoid_dynamic_calls` bans. Executed 2026-10-13: 15/15.
 - Tombstone: soft-delete → verify `deleted_at` set, op-log has `op_delete`.
 - Op-log append atomicity: force a failure in the business write → assert op-log is unchanged (transaction rollback).
 - Seq monotonicity: rapid sequential writes → `seq` strictly increases.

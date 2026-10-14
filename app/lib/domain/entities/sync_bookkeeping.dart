@@ -51,8 +51,15 @@ mixin SyncBookkeeping {
 }
 
 /// Converts the integer millisecond epochs stored in SQLite to [DateTime].
-DateTime? millisToDateTime(int? millis) =>
-    millis == null ? null : DateTime.fromMillisecondsSinceEpoch(millis);
+///
+/// The result is always UTC. Every [DateTime] in this app is UTC so that
+/// value equality holds across a row round-trip and a JSON round-trip — a
+/// local-flavoured [DateTime] and a UTC-flavoured one with the same instant
+/// are *not* `==`, which would fail the deep-equality assertions the entity
+/// round-trip tests rely on.
+DateTime? millisToDateTime(int? millis) => millis == null
+    ? null
+    : DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true);
 
 /// Converts a [DateTime] (or null) to the integer epoch SQLite stores.
 int? dateTimeToMillis(DateTime? time) => time?.millisecondsSinceEpoch;
