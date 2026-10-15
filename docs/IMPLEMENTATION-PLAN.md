@@ -142,11 +142,65 @@ Seven phases (P0–P6), each with a hard exit criterion. No phase starts until t
 - Tombstone: soft-delete → verify `deleted_at` set, op-log has `op_delete`.
 - Op-log append atomicity: force a failure in the business write → assert op-log is unchanged (transaction rollback).
 - Seq monotonicity: rapid sequential writes → `seq` strictly increases.
+- Repository-layer write-path suite (all three bullets above, 2026-10-14):
+  `app/test/data/repositories/sync_repository_test.dart` — 10 tests over
+  `CategoryRepository`/`AccountRepository` on real SQLite (ffi). One
+  connection per file via `openTestDatabase()` (the ffi factory reuses its
+  `:memory:` handle, so per-test opens would leak rows); `setUp` deletes
+  `op_log`/`categories`/`accounts`/`device_meta`, which also rewinds
+  `next_seq` so each test starts at seq 1. Covers: create queues exactly one
+  op whose `entity_type` doubles as the JSON:API `type` and whose payload is
+  `jsonEncode(row.toJsonApi())`; seq 1..5 monotonic in both row and queue
+  order; failed `UPDATE` (row deleted behind the repo's back) throws
+  `StateError` and rolls back op + stored counter; pending-create→`create`,
+  fireflyId-bearing row→`update`; soft delete = tombstone + `op_delete` with
+  null payload and `row.seq` stamped by the delete; hard delete drops the row
+  but still queues; `accounts` table name for another entity type;
+  `CurrencyRepository` is an `EntityReader` but **not** a `SyncRepository`
+  (pull-only, DESIGN §3.1). **Finding:** SQLite stores epoch millis, so
+  `getById` returns `updatedAt` truncated to ms while `create()` returns the
+  entity with microseconds — the equality assertion therefore converts
+  through `millisToDateTime(dateTimeToMillis(...))`, the codec's own
+  conversion, instead of a hand-rolled truncation (the persistence suite
+  never hit this because it uses whole-second timestamps). Executed
+  2026-10-14: 10/10 new, full suite **227/227**, `flutter analyze` no
+  issues, every line ≤80 chars.
+- Generic `EntityDao` surface suite (2026-10-14):
+  `app/test/data/dao/entity_dao_test.dart` — 14 tests on `CategoryDao`
+  (real SQLite ffi, one shared connection, per-test table wipe). Covers the
+  primitives the repository suite does not reach: insert round-trip and
+  duplicate-key abort; `upsert` replace/insert (pull-merge, no duplicate
+  row); `update` 1/0 return contract; `patch` touching only named columns;
+  `softDelete` tombstone stamps (deletedAt/updated_at/seq/sync-status reset
+  to pending); `getById`/`getByFireflyId` (local id never matches the
+  server-id column); `getAll` default-hides tombstones, DESC order, limit,
+  `includeDeleted`, custom `orderBy`; `getPending` excludes synced rows but
+  keeps tombstones (pull-merge must not resurrect, DESIGN §6.4), oldest
+  first; `count` ± `includeDeleted`. Constructed DateTimes must be
+  `isUtc: true` — see REGRESSION-LOG R10.
+- SQLCipher key lifecycle suite (2026-10-14):
+  `app/test/data/db/database_key_store_test.dart` — 6 tests. Key format
+  (44 URL-safe base64 chars → 32 bytes, unique over 50 draws — R11);
+  `InMemoryDatabaseKeyStore` generate-once/delete; `SecureStorageDatabaseKeyStore`
+  generate-once + persist, adopt-across-relaunch, adopt-pre-seeded,
+  delete-then-regenerate (via `FlutterSecureStorage.setMockInitialValues`);
+  end-to-end: store-minted key creates the encrypted DB, a fresh store
+  instance reopens it with the data intact, and a wrong key is rejected
+  (`file is not a database`).
+- Migration proof (2026-10-14, `app_database_test.dart` `migrations`
+  group, 2 tests): a raw pre-versioning file (`PRAGMA user_version` 0, one
+  user table + row) opened through `openAppDatabase` reaches
+  `latestSchemaVersion` with the legacy row and all app tables present;
+  `migrations.keys` asserted contiguous `1..latestSchemaVersion` so a
+  missing version fails here instead of on a device (`_applyMigrations`
+  throws `StateError` on a gap).
+- Full milestone verification 2026-10-14: `flutter test` **252/252**,
+  `flutter analyze` no issues, every line ≤80 chars.
 
 ### Exit Criterion
-- [ ] All unit tests green (`flutter test`).
-- [ ] Schema migration from empty DB to latest version works.
-- [ ] SQLCipher key stored in Keystore; DB opens with key; fails without key.
+- [x] All unit tests green (`flutter test`). — verified 2026-10-14: **252/252**, `flutter analyze` no issues, all lines ≤80 chars.
+- [x] Schema migration from empty DB to latest version works. — verified 2026-10-14: `migrations` group in `app_database_test.dart` — legacy `user_version=0` file upgraded to `latestSchemaVersion` with its row and all app tables intact; migration keys contiguous 1..latest.
+- [x] SQLCipher key stored in Keystore; DB opens with key; fails without key. — verified 2026-10-14: `database_key_store_test.dart` 6/6 — key minted once and persisted via `flutter_secure_storage` (Keystore/Keychain on device), fresh store instance reopens the DB with data intact, wrong key rejected (`file is not a database`).
 
 ---
 

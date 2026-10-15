@@ -260,6 +260,157 @@ failing-then-passing `Bill` case. Full `flutter test` → 217/217.
 
 ---
 
+## R8 — graphify extract refuses a fully cached corpus with "no LLM API key"
+
+*(graphify toolchain, not app code — recorded because it blocks the documented
+"cache-hit-only, no model calls" workflow.)*
+
+**Symptom.** `graphify extract .` on a corpus whose 13 doc/image files are all
+semantic-cache-ready exited 1:
+`error: no LLM API key found (13 doc/paper/image file(s) need semantic extraction)`.
+
+**Root cause.** `graphify/cli.py` enforces the backend/API-key gate
+(`needs_llm = bool(semantic_files)`) **before** the semantic-cache read (which
+happens later, after the AST pass). `semantic_files` is every changed doc/image
+file — it is not pre-filtered against the cache. So a fully cached corpus still
+requires a resolvable backend, even though zero model calls would be made.
+
+**Fix.** Set a dummy key for the gate only:
+`GEMINI_API_KEY=dummy graphify extract .`. The gate only checks key *presence*;
+with 13/13 cache hits the extract path dispatches nothing (verified:
+`semantic cache: 13 hit / 0 miss`, no HTTP attempted — a dummy key would 400 if
+anything were sent). Community naming stays LLM-free via the labels-reuse branch
+(`.graphify_labels.json` + `.sig`, validated per community against membership
+signatures) or the hub-label fallback — both local.
+
+**Tested.** Full pipeline: extract (dummy key) → 13 hit / 0 miss → graph.json
+865 nodes / 1383 edges / 68 communities → `cluster-only` (56 communities renamed
+by hub, 0 placeholders) → `graphify-theme-apply` OK. Zero model calls throughout.
+
+---
+
+## R9 — "unverified semantic shrink" on docs/DESIGN.md (3 → 2) was a replaced legacy id
+
+**Symptom.** Extract wrote the graph but warned:
+`semantic extraction is incomplete: unverified semantic shrink detected for
+'docs/DESIGN.md' (3 -> 2 nodes)` (#3203 fail-closed guard).
+
+**Root cause.** Yesterday's graph carried a third DESIGN-attributed node — the
+old-format short id `docs_design`, from before the full-path stem convention.
+The cached entry holds the canonical two (`src_docs_design`, `src_auth_session`).
+`build_merge` drops prior semantic nodes of any file re-extracted this run, so
+the legacy node was replaced by the entry's two; the guard counts prior (3) vs
+fresh (2) and warns. The stale node had no inbound edges and no cache references.
+
+**Fix.** None needed — replacement was correct. Verified on the written graph:
+0 dangling edges; no node, edge, or cache entry references `docs_design`; every
+DESIGN link targets the live `src_docs_design` id.
+
+**How to avoid repeating it.** Cross-file edge targets must be node ids taken
+from the real cache entry of the target file (full-path stems), never
+short-form guesses. After fixing a legacy id, re-run extract so the guard's
+counts realign. Note: `extract` and `cluster-only` both back up to the same
+dated folder (`graphify-out/YYYY-MM-DD/`); a later command overwrites the
+earlier pre-run snapshot — copy it aside first if you need it.
+
+---
+
+## R10 — Entity `==` fails when the test builds local `DateTime`, the codec decodes UTC
+
+**Symptom.** Seven of the fourteen new `entity_dao_test.dart` assertions
+failed with values that looked identical, e.g.
+`updatedAt: 1970-01-01 05:00:01.000` (expected) vs
+`1970-01-01 00:00:01.000Z` (actual) — same epoch instant, still `!=`.
+
+**Root cause.** `sync_bookkeeping.dart:60` `millisToDateTime` decodes rows
+with `DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true)`, so every
+entity read back from SQLite carries `isUtc == true`. Dart's `DateTime.==`
+compares the epoch **and** the `isUtc` flag, so a test helper that builds
+`DateTime.fromMillisecondsSinceEpoch(millis)` (local time, host is UTC+5)
+produces an object that is never `==` to the decoded row. Storage was never
+affected — `dateTimeToMillis` stores the same epoch either way; only
+object-level equality breaks.
+
+**Fix.** Test helper and the two `softDelete` assertions now build
+`DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true)`, mirroring the
+decoder; the helper's doc comment states the rule. No production code
+changed. Covered by the previously failing assertions themselves
+(round-trip, upsert ×2, patch, softDelete ×2, getByFireflyId).
+
+**How to avoid repeating it.** Any test comparing a decoded entity with a
+constructed one must build DateTimes with `isUtc: true`. Alternative used
+by the repository suite: convert through the codec,
+`millisToDateTime(dateTimeToMillis(dt))`, so the expected value is produced
+by the same function the code under test uses.
+
+---
+
+## R11 — `generateDatabaseKey` doc said "43 chars"; the encoder pads to 44
+
+**Symptom.** Writing the key-format assertion for
+`database_key_store_test.dart`, the doc comment on
+`lib/data/db/database_key_store.dart:88` claimed the key is "43 chars".
+
+**Root cause.** Dart's `base64Url.encode` always pads to a multiple of
+four (Dart SDK `convert/base64.dart`), so 32 bytes encode to 44 chars —
+43 payload chars plus one trailing `=`. Verified empirically with a
+`dart` probe: `len=44`, decodes to 32 bytes, matches `^[A-Za-z0-9_-]{43}=$`.
+
+**Fix.** Comment corrected to "44 chars: 43 payload chars plus one `=`
+padding character". No code depended on 43 (`grep \b43\b` matched only the
+comment). The test now pins `hasLength(44)` + regex + `base64Url.decode`
+length, so a future encoder/alphabet change fails loudly.
+
+**How to avoid repeating it.** Assert key material in tests rather than
+trusting prose; Dart's base64 codecs pad, while its decoder accepts
+unpadded input.
+
+---
+
+## R12 — Editing a graphified doc pruned its rich cache entry; the thin
+re-extraction shrank the graph and the write was (correctly) refused
+
+**Symptom.** After ticking the P1 checkboxes in `docs/IMPLEMENTATION-PLAN.md`
+and appending R10/R11 here, `graphify extract .` refused to write: 862 nodes
+against the guarded floor of 867 (unverified semantic shrink, same guard as
+R9).
+
+**Root cause.** Two mechanisms stacked:
+
+1. Cache entries are keyed by the SHA256 of the file's content, and every
+   extract run calls `prune_semantic_cache`, which deletes entries whose hash
+   is no longer live (by design — fixes the unbounded-orphan problem #1527).
+   Editing either doc therefore deleted the rich entries (plan 9 nodes,
+   log 11 nodes) the graph was built from.
+2. Re-extraction under-extracted deterministically: the plan came back with
+   4 nodes instead of 9, this log with 1 instead of 11 — identical across two
+   retries with the real Gemini key, so not a transient glitch. Both docs go
+   through one semantic chunk and the response came back trimmed.
+
+The net loss (862 < 867) is what tripped the guard — correct behavior: it
+protected the curated graph from a partial rebuild.
+
+**Fix.** Rehydrated both cache entries by hand from `graphify-out/graph.json`:
+took the 20 doc nodes, the 17 plan edges (14 within-doc plus 3 cross-doc →
+`src_docs_design` and the two golden-test nodes), the 10 log edges, and the
+`implementation_roadmap_phases` hyperedge; stripped builder keys
+(`_origin`, `community`, `community_name`, `norm_label`); overwrote the
+current content-hash entries under
+`graphify-out/cache/semantic/p5e80268fecd6/`. The next run reported
+3 hit / 0 miss (no LLM involved) and rebuilt 877 nodes / 1407 links /
+0 dangling / 71 communities — write accepted. This entry was then added to
+this file and restored with the same procedure (R10–R12 section nodes
+rehydrated as `docs_regression_log_md_r10/r11/r12`).
+
+**How to avoid repeating it.** After editing any graphified doc expect its
+cache entry to be pruned and re-extracted; compare the re-extracted node set
+against `graphify-out/graph.json` before trusting the rebuild. If it came
+back thin, restore the entry from graph.json (rehydration above) rather than
+accepting a partial shrink — never let a rebuild drop below the prior node
+count without verification.
+
+---
+
 ## Open follow-up
 
 - `hooks.user_defines.sqlite3.source: sqlcipher` is global. Confirm the bundled

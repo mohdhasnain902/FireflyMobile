@@ -12,6 +12,14 @@ import 'package:sqflite_common/sqlite_api.dart';
 ///
 /// Both are therefore allocated inside a transaction so concurrent writes
 /// cannot observe the same value.
+///
+/// Every value method exists in two shapes: a plain one that uses this DAO's
+/// own connection, and a `*In(executor, …)` one that runs on a caller-supplied
+/// [DatabaseExecutor]. The variants are what let a repository allocate `seq`
+/// and `device_id` *inside* the transaction that also writes the business row
+/// and the op-log entry — the unit of work DESIGN §5.2 requires to be atomic.
+/// A nested `db.transaction()` would fail, so the inner work must accept the
+/// outer transaction instead.
 class DeviceMetaDao {
   /// Wraps `db`, which must already have the schema applied.
   new(this._db);
@@ -39,9 +47,9 @@ class DeviceMetaDao {
   /// stored. The token itself lives in secure storage; this is only its key.
   static const fireflyPatRefKey = 'firefly_pat_ref';
 
-  /// Returns the value stored under [key], or null when unset.
-  Future<String?> get(String key) async {
-    final rows = await _db.query(
+  /// Returns the value stored under [key] on [executor], or null when unset.
+  Future<String?> getIn(DatabaseExecutor executor, String key) async {
+    final rows = await executor.query(
       'device_meta',
       columns: ['value'],
       where: 'key = ?',
@@ -52,61 +60,80 @@ class DeviceMetaDao {
     return rows.first['value'] as String?;
   }
 
-  /// Writes [value] under [key], overwriting any existing value.
-  Future<void> set(String key, String value) {
-    return _db.insert(
-      'device_meta',
-      {'key': key, 'value': value},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+  /// Returns the value stored under [key], or null when unset.
+  Future<String?> get(String key) => getIn(_db, key);
+
+  /// Writes [value] under [key] on [executor], replacing any existing value.
+  Future<void> setIn(DatabaseExecutor executor, String key, String value) {
+    return executor.insert('device_meta', {
+      'key': key,
+      'value': value,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
+
+  /// Writes [value] under [key], overwriting any existing value.
+  Future<void> set(String key, String value) => setIn(_db, key, value);
 
   /// Removes the entry under [key]. No-op if the key does not exist.
   Future<void> remove(String key) {
     return _db.delete('device_meta', where: 'key = ?', whereArgs: [key]);
   }
 
-  /// Returns this install's device id, generating and persisting one on first
-  /// call.
+  /// Returns this install's device id on [executor], generating and persisting
+  /// one on first use.
   ///
   /// Generated as UUIDv4 and never regenerated, because a changed device id
   /// would silently break the total order across that device's ops
   /// (DESIGN §6.3 orders by `wall_ts, device_id, seq`).
-  Future<String> getOrCreateDeviceId() async {
-    final existing = await get(deviceIdKey);
+  ///
+  /// The read and the write share [executor], so when the caller passes its
+  /// own transaction the allocation is rolled back with the rest of that unit
+  /// of work rather than surviving a failed write.
+  Future<String> getOrCreateDeviceIdIn(DatabaseExecutor executor) async {
+    final existing = await getIn(executor, deviceIdKey);
     if (existing != null) return existing;
     final fresh = newDeviceId();
-    await set(deviceIdKey, fresh);
+    await setIn(executor, deviceIdKey, fresh);
     return fresh;
+  }
+
+  /// Returns this install's device id, generating and persisting one on first
+  /// call.
+  Future<String> getOrCreateDeviceId() =>
+      _db.transaction(getOrCreateDeviceIdIn);
+
+  /// Allocates the next value of the per-device sequence counter on
+  /// [executor].
+  ///
+  /// The read-modify-write runs against [executor] alone. SQLite serialises
+  /// writers, so two concurrent callers cannot read the same value; the second
+  /// blocks until the first commits and then sees the updated row. This is
+  /// what makes `seq` strictly increasing (DESIGN §6.6). When [executor] is an
+  /// open transaction the increment commits with it — and rolls back with it —
+  /// so a failed write never leaves a hole in the counter.
+  Future<int> nextSeqIn(DatabaseExecutor executor) async {
+    final rows = await executor.query(
+      'device_meta',
+      columns: ['value'],
+      where: 'key = ?',
+      whereArgs: [nextSeqKey],
+      limit: 1,
+    );
+
+    final current = rows.isEmpty
+        ? 0
+        : int.parse(rows.first['value']! as String);
+    final allocated = current + 1;
+
+    await executor.insert('device_meta', {
+      'key': nextSeqKey,
+      'value': '$allocated',
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    return allocated;
   }
 
   /// Allocates and returns the next value of the per-device sequence counter.
   ///
-  /// The read-modify-write happens inside a transaction. SQLite serialises
-  /// writers, so two concurrent callers cannot read the same value; the second
-  /// blocks until the first commits and then sees the updated row. This is
-  /// what makes `seq` strictly increasing (DESIGN §6.6).
-  Future<int> nextSeq() {
-    return _db.transaction((txn) async {
-      final rows = await txn.query(
-        'device_meta',
-        columns: ['value'],
-        where: 'key = ?',
-        whereArgs: [nextSeqKey],
-        limit: 1,
-      );
-
-      final current = rows.isEmpty
-          ? 0
-          : int.parse(rows.first['value']! as String);
-      final allocated = current + 1;
-
-      await txn.insert(
-        'device_meta',
-        {'key': nextSeqKey, 'value': '$allocated'},
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-      return allocated;
-    });
-  }
+  /// The read-modify-write happens inside a transaction (DESIGN §6.6).
+  Future<int> nextSeq() => _db.transaction(nextSeqIn);
 }

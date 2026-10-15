@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firefly_mobile/data/dao/device_meta_dao.dart';
 import 'package:firefly_mobile/data/dao/op_log_dao.dart';
 import 'package:firefly_mobile/data/db/database_opener.dart';
+import 'package:firefly_mobile/data/db/schema.dart';
 import 'package:firefly_mobile/domain/entities/op_log_entry.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -35,7 +36,7 @@ void main() {
       );
       final tables = rows.map((r) => r['name']! as String).toSet();
 
-      // The 13 business entities plus the two sync tables.
+      // The 14 business entities plus the two sync tables.
       expect(
         tables,
         containsAll(<String>{
@@ -137,6 +138,56 @@ void main() {
       );
       expect(identical(first, second), isTrue);
       await first.close();
+    });
+  });
+
+  group('migrations', () {
+    test('upgrades a pre-existing user_version 0 file without data loss',
+        () async {
+      // Simulates a file that predates schema versioning: raw open (no
+      // version option), real rows, PRAGMA user_version still 0.
+      final dir = await Directory.systemTemp.createTemp('firefly_mig_');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = '${dir.path}/legacy.db';
+
+      final legacy = await databaseFactoryFfiNoIsolate.openDatabase(path);
+      await legacy.execute('CREATE TABLE legacy_note (id TEXT PRIMARY KEY)');
+      await legacy.execute("INSERT INTO legacy_note VALUES ('keep-me')");
+      final before = await legacy.rawQuery('PRAGMA user_version');
+      expect(before.first['user_version'], 0);
+      await legacy.close();
+
+      // The app open path must bring the file to the latest schema
+      // (onCreate runs _applyMigrations for a version-0 file; later
+      // versions run through onUpgrade, which shares the same function).
+      final db = await openAppDatabase(
+        factory: databaseFactoryFfiNoIsolate,
+        path: path,
+      );
+
+      // ...without dropping what the file already held.
+      final kept = await db.rawQuery('SELECT id FROM legacy_note');
+      expect(kept.single['id'], 'keep-me');
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table' "
+        "AND name NOT LIKE 'sqlite_%'",
+      );
+      expect(
+        tables.map((r) => r['name']),
+        containsAll(<String>['categories', 'op_log', 'device_meta']),
+      );
+      final after = await db.rawQuery('PRAGMA user_version');
+      expect(after.first['user_version'], latestSchemaVersion);
+      await db.close();
+    });
+
+    test('migration keys are contiguous from 1 to latestSchemaVersion', () {
+      // _applyMigrations throws StateError on a gap, so a missing version
+      // must be caught here rather than on a user's device.
+      final keys = migrations.keys.toList()..sort();
+
+      expect(keys, List<int>.generate(latestSchemaVersion, (i) => i + 1));
+      expect(keys.first, 1);
     });
   });
 

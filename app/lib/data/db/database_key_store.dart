@@ -85,7 +85,9 @@ class SecureStorageDatabaseKeyStore implements DatabaseKeyStore {
   Future<void> deleteKey() => _storage.delete(key: _storageKey);
 }
 
-/// 32 random bytes, URL-safe base64 encoded (43 chars).
+/// 32 random bytes, URL-safe base64 encoded (44 chars: 43 payload chars
+/// plus one trailing `=` padding character — Dart's encoder always pads to
+/// a multiple of four).
 ///
 /// The URL-safe alphabet is used so the value can be spliced into a
 /// `PRAGMA KEY='...'` statement without escaping.

@@ -11,9 +11,15 @@ import 'package:sqflite_common/sqlite_api.dart';
 /// log.
 class OpLogDao {
   /// Wraps `db`, which must already have the schema applied.
+  ///
+  /// The field is a [DatabaseExecutor] rather than a [Database] so the writer
+  /// can be handed the open transaction that also holds the business row: the
+  /// row and its queued op then commit or roll back together (DESIGN §5.2).
+  /// Every method here only uses `insert`/`query`/`delete`/`rawUpdate`, all of
+  /// which the executor interface already exposes.
   new(this._db);
 
-  final Database _db;
+  final DatabaseExecutor _db;
 
   /// Records a mutation.
   ///
