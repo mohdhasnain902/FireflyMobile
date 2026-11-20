@@ -4,4 +4,5 @@ database.env
 
 # Local secrets + scratch (PAT / password / cookie jar / scraped HTML)
 .credentials
+.backup_token
 tmp/

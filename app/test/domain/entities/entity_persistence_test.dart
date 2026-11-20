@@ -213,8 +213,10 @@ void main() {
   final recurrence = Recurrence(
     id: 'row-11',
     title: 'Salary',
+    type: 'deposit',
     description: 'Monthly pay',
-    recurUntil: DateTime.utc(2027, 12, 31),
+    firstDate: DateTime.utc(2026),
+    repeatUntil: DateTime.utc(2027, 12, 31),
     nrOfRepetitions: 12,
     transactionsJson: '[{"transaction_journal_id":"9","amount":"3000"}]',
     fireflyId: '22',

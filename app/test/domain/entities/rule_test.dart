@@ -27,7 +27,8 @@ void main() {
       'scope': 'all',
       'active': true,
       'strict': false,
-      'stop': true,
+      // Firefly's wire name; `stop` is the phone's column.
+      'stop_processing': true,
       'order': 4,
       'triggers': <dynamic>[
         <String, dynamic>{
@@ -142,7 +143,7 @@ void main() {
         'scope',
         'active',
         'strict',
-        'stop',
+        'stop_processing',
         'order',
         'triggers',
         'actions',

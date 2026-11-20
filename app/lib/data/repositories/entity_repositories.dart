@@ -30,7 +30,6 @@ library;
 import 'dart:convert';
 
 import 'package:firefly_mobile/data/dao/business_daos.dart';
-import 'package:firefly_mobile/data/repositories/entity_reader.dart';
 import 'package:firefly_mobile/data/repositories/sync_repository.dart';
 import 'package:firefly_mobile/domain/entities/account.dart';
 import 'package:firefly_mobile/domain/entities/attachment.dart';
@@ -113,16 +112,19 @@ class CategoryRepository extends SyncRepository<Category> {
       );
 }
 
-/// Read path for `currencies` — pull-only, with no queue and no mutations.
+/// `currencies` — country + custom (BTC, etc.) currencies.
 ///
-/// Currencies are the one business table the phone never writes (DESIGN §3.1:
-/// pull-only, `sync_status` always `synced`), so this repository deliberately
-/// extends the read base rather than the write base. Pulling a currency down
-/// from the server is a plain row write with no op attached — asking the server
-/// to create data it already owns is not a mutation of ours to replay.
-class CurrencyRepository extends EntityReader<Currency> {
-  /// Binds the currency read path to [db].
-  new({required super.db}) : super(daoOf: CurrencyDao.new);
+/// Now write-capable (Phase C): the phone can create/edit/delete currencies,
+/// which are queued for sync like every other entity. Pull still merges server
+/// rows via the same DAO.
+class CurrencyRepository extends SyncRepository<Currency> {
+  /// Binds the currencies write path to [db].
+  new({required super.db, required super.meta})
+    : super(
+        entityType: 'currencies',
+        payloadOf: (entity) => jsonEncode(entity.toJsonApi()),
+        daoOf: CurrencyDao.new,
+      );
 }
 
 /// `piggy_banks` — saving goals.

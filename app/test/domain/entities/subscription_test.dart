@@ -7,8 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 /// Round-trip contract for the `Subscription` entity (DESIGN §5.1, §6.2).
 ///
 /// Mirrors `category_test.dart` plus the subscription-specific quirks:
-/// `periods` arrives as a JSON array stored in a TEXT column, and
-/// `next_date` / `end_date` are wire timestamps that must come back UTC.
+/// `periods` arrives as a JSON array stored in a TEXT column, and the
+/// timestamps must come back UTC.
+///
+/// The wire shape is the **bill** shape, which is what Firefly's subscription
+/// endpoint actually emits: `name` (not `title`), `amount_min`/`amount_max`
+/// (no `amount`) and `date` (not `next_date`). Reading the other names left
+/// every subscription blank, zero and dateless on the phone.
 ///
 ///  1. JSON:API -> model reads the enveloped `data.id` and `attributes`.
 ///  2. model -> JSON:API emits only fields the schema stores.
@@ -39,14 +44,15 @@ void main() {
     'type': 'subscriptions',
     'id': '42',
     'attributes': <String, dynamic>{
-      'title': 'Netflix',
-      'amount': '15.990000000000',
+      'name': 'Netflix',
+      'amount_min': '15.990000000000',
+      'amount_max': '15.990000000000',
       'currency_code': 'EUR',
       'currency_id': '2',
       'transaction_journal_id': '99',
       'repeat_freq': 'monthly',
       'active': true,
-      'next_date': '2026-11-01T00:00:00Z',
+      'date': '2026-11-01T00:00:00Z',
       'end_date': '2027-10-01T00:00:00Z',
       'periods': periods,
       'method': 'cc',
@@ -94,8 +100,8 @@ void main() {
           'type': 'subscriptions',
           'id': '1',
           'attributes': <String, dynamic>{
-            'title': 'Bare',
-            'amount': '9.99',
+            'name': 'Bare',
+            'amount_min': '9.99',
           },
         },
         id: 'x',
@@ -148,20 +154,24 @@ void main() {
       final attributes = json['attributes']! as Map<String, dynamic>;
 
       expect(attributes.keys, unorderedEquals(<String>[
-        'title',
-        'amount',
+        'name',
+        'amount_min',
+        'amount_max',
         'currency_code',
-        'currency_id',
+        'transaction_currency_id',
         'transaction_journal_id',
         'repeat_freq',
         'active',
-        'next_date',
+        'date',
         'end_date',
         'periods',
         'method',
         'notes',
         'updated_at',
       ]));
+      expect(attributes['name'], 'Netflix');
+      expect(attributes['amount_min'], '15.990000000000');
+      expect(attributes['date'], '2026-11-01T00:00:00.000Z');
       expect(attributes.keys, isNot(contains('id')));
       expect(attributes.keys, isNot(contains('seq')));
       expect(attributes.keys, isNot(contains('sync_status')));
@@ -193,7 +203,7 @@ void main() {
       final attributes =
           rebuilt.toJsonApi()['attributes']! as Map<String, dynamic>;
       expect(attributes['periods'], periods);
-      expect(attributes['next_date'], '2026-11-01T00:00:00.000Z');
+      expect(attributes['date'], '2026-11-01T00:00:00.000Z');
       expect(attributes['end_date'], '2027-10-01T00:00:00.000Z');
     });
 
@@ -219,6 +229,7 @@ void main() {
       expect(row['seq'], 7);
       expect(row['sync_status'], 'synced');
       expect(row['title'], 'Netflix');
+      expect(row['next_date'], '2026-11-01T00:00:00.000Z');
       expect(row['active'], 1);
       expect(row['periods'], isA<String>());
       expect(row['next_date'], isA<String>());
@@ -231,8 +242,8 @@ void main() {
           'type': 'subscriptions',
           'id': '1',
           'attributes': <String, dynamic>{
-            'title': 'Bad date',
-            'amount': '1.00',
+            'name': 'Bad date',
+            'amount_min': '1.00',
             'updated_at': 'not-a-timestamp',
           },
         },

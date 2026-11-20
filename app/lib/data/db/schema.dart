@@ -40,7 +40,106 @@ CREATE INDEX IF NOT EXISTS idx_${tableName}_deleted
 /// place, so an installed app migrates forward correctly.
 final Map<int, List<String>> migrations = {
   1: _initialSchema,
+  2: _addTransactionExternalId,
+  3: _invalidateTransactionLwwCursor,
+  4: _addTransactionOptionColumns,
+  5: _addBillDate,
+  6: _invalidateSubscriptionAndRuleCursor,
 };
+
+/// Version 2 — store a journal's `external_id`.
+///
+/// Firefly puts `external_id` on 522 of the 547 journals on the reference book
+/// (imports and bank feeds key off it). Without a column the pull dropped it
+/// and any phone edit of such a journal pushed a payload with no
+/// `external_id`, which clears it server-side: a silent loss of a field the
+/// website shows on every transaction form.
+const List<String> _addTransactionExternalId = [
+  'ALTER TABLE transactions ADD COLUMN external_id TEXT',
+];
+
+/// Version 3 — backfill `external_id` for rows already mirrored.
+///
+/// The new column can only be filled from the server, and the pull skips any
+/// row whose `remote_updated_at` is not older than the server's. Without this,
+/// every already-mirrored leg would keep a NULL `external_id` forever (522 of
+/// 547 on the reference book, and it is exactly what happened on the first
+/// upgrade: the legs pulled before the install finished stayed NULL). Clearing
+/// the LWW cursor makes the next pull rewrite every leg once.
+///
+/// Kept as its own version rather than folded into 2 so a device that already
+/// ran 2 still gets the backfill.
+const List<String> _invalidateTransactionLwwCursor = [
+  'UPDATE transactions SET remote_updated_at = NULL',
+];
+
+/// Version 4 — store Firefly's per-journal "Options" fields.
+///
+/// The website's transaction form carries five extra dates plus an external
+/// URL, an internal reference and a manual order. The pull dropped all eight,
+/// and because Firefly replaces the journal on a write, editing such a
+/// transaction on the phone silently cleared them server-side. Storing them
+/// makes both sides hold the same object.
+///
+/// The LWW cursor is cleared again (same reason as v3): rows mirrored before
+/// this version keep NULL for the new columns unless the next pull rewrites
+/// them.
+const List<String> _addTransactionOptionColumns = [
+  'ALTER TABLE transactions ADD COLUMN interest_date TEXT',
+  'ALTER TABLE transactions ADD COLUMN book_date TEXT',
+  'ALTER TABLE transactions ADD COLUMN process_date TEXT',
+  'ALTER TABLE transactions ADD COLUMN due_date TEXT',
+  'ALTER TABLE transactions ADD COLUMN payment_date TEXT',
+  'ALTER TABLE transactions ADD COLUMN external_url TEXT',
+  'ALTER TABLE transactions ADD COLUMN internal_reference TEXT',
+  'ALTER TABLE transactions ADD COLUMN order_index INTEGER',
+  'UPDATE transactions SET remote_updated_at = NULL',
+];
+
+/// Version 5 — store a bill's next due date.
+///
+/// Firefly's bill object carries the next due date in `date`, the field its own
+/// form shows and its write endpoint *requires*. The schema had no column, so
+/// the pull dropped it and a bill edited on the phone pushed a payload without
+/// it (422).
+///
+/// The LWW cursor is cleared again (same reason as v3/v4): bills mirrored
+/// before this version keep NULL until the next pull rewrites them.
+///
+/// The column is deliberately absent from the v1 `CREATE TABLE bills`: a fresh
+/// install replays every migration in order, so adding it in both places fails
+/// with "duplicate column name: date".
+const List<String> _addBillDate = [
+  'ALTER TABLE bills ADD COLUMN date TEXT',
+  'UPDATE bills SET remote_updated_at = NULL',
+];
+
+/// Version 6 — re-read subscriptions and rules with their real wire keys.
+///
+/// They were mirrored with the wrong keys (`title`/`amount`/`next_date` on a
+/// payload that only has `name`/`amount_min`/`date`, and `stop` where Firefly
+/// sends `stop_processing`), so the stored rows are blank, zero and dateless.
+/// Fixing the parser is not enough on a device that already holds those rows:
+/// the pull compares `remote_updated_at` and skips them as unchanged. Clearing
+/// the cursor forces one rewrite, exactly like v3 and v5 did.
+///
+/// v5 only cleared `bills`, which is why a device upgraded through it kept the
+/// broken subscription rows — this is its own version so those devices heal too.
+const List<String> _invalidateSubscriptionAndRuleCursor = [
+  'UPDATE subscriptions SET remote_updated_at = NULL',
+  'UPDATE rules SET remote_updated_at = NULL',
+];
+
+/// Version 2 (Model B) was folded into v1 before this schema ever shipped, so
+/// there is no migration list for it: the Model B recurrence columns
+/// (`type`, `first_date`, `repeat_until`, `apply_rules`, `latest_date`) and the
+/// `recurrence_repetitions` child table are part of the one initial create.
+///
+/// Do not reintroduce a `RENAME COLUMN recur_until` / `DROP COLUMN
+/// repeat_freq` migration for them. SQLite's `onCreate` (a fresh install)
+/// replays every migration in order, so such a statement would run against a
+/// table v1 just created with the new column names and fail every fresh
+/// install with "no such column".
 
 // `syncIndexes(...)` is a function call, so this list cannot be const even
 // though its contents are compile-time strings.
@@ -76,6 +175,19 @@ CREATE INDEX IF NOT EXISTS idx_oplog_order
   '''
 CREATE INDEX IF NOT EXISTS idx_oplog_pending
     ON op_log(entity_type, entity_id)
+''',
+  '''
+CREATE TABLE sync_log (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at     INTEGER NOT NULL,
+    phase          TEXT NOT NULL,
+    status         TEXT NOT NULL,
+    pushed_ops     INTEGER,
+    pull_inserted  INTEGER,
+    pull_updated   INTEGER,
+    pull_tombstoned INTEGER,
+    error          TEXT
+)
 ''',
 
   // ---------------------------------------------------------------------
@@ -266,21 +378,56 @@ CREATE TABLE rules (
 ''',
   syncIndexes('rules'),
 
-  // Recurrence definitions are likewise server-executed only (DESIGN §3.1).
+  // Recurrence definitions are stored and synced; the server expands them into
+  // transactions (DESIGN §3.1). Frequency is NOT a flat column: a recurrence
+  // owns 1:N rows in `recurrence_repetitions`, which is the only model that can
+  // express a multi-frequency recurrence the way Firefly does on the wire
+  // (`repetitions[]`).
+  //
+  // `type` is the recurrence's transaction direction and `first_date` /
+  // `repeat_until` / `apply_rules` are all wire-backed (RecurrenceTransformer
+  // emits them on every pull), so they are real columns from the start rather
+  // than re-derived from `transactions_json`. `latest_date` is the scheduler
+  // cursor and is phone-local only — never pushed, so a re-run is idempotent.
   '''
 CREATE TABLE recurrences (
     id                   TEXT PRIMARY KEY,
     title                TEXT NOT NULL,
+    type                 TEXT,
     description          TEXT,
-    repeat_freq          TEXT NOT NULL DEFAULT 'monthly',
-    recur_until          TEXT,
+    first_date           TEXT,
+    repeat_until         TEXT,
     nr_of_repetitions    INTEGER,
     active               INTEGER NOT NULL DEFAULT 1,
+    apply_rules          INTEGER NOT NULL DEFAULT 1,
     transactions_json    TEXT,
+    latest_date          TEXT,
     $syncBookkeepingColumns
 )
 ''',
   syncIndexes('recurrences'),
+
+  // Child table of recurrence frequencies. Deliberately has NO
+  // `$syncBookkeepingColumns`: repetitions are not an independent synced
+  // entity. They are owned entirely by their parent recurrence and ride along
+  // in the parent's pull (the server nests them under `repetitions`), so they
+  // are rewritten wholesale whenever the parent is upserted.
+  '''
+  CREATE TABLE recurrence_repetitions (
+      recurrence_id      TEXT NOT NULL,
+      ord                INTEGER NOT NULL,
+      repetition_type    TEXT NOT NULL,
+      repetition_moment  TEXT NOT NULL,
+      repetition_skip    INTEGER NOT NULL DEFAULT 0,
+      weekend            INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (recurrence_id, ord)
+  )
+  ''',
+  // Cheap lookup by parent when the scheduler loads a recurrence's schedule.
+  '''
+  CREATE INDEX IF NOT EXISTS idx_recurrence_repetitions_recurrence
+      ON recurrence_repetitions(recurrence_id)
+  ''',
 
   // Attachment bytes live on disk; the row holds metadata plus a local path
   // to the file staged for multipart upload.

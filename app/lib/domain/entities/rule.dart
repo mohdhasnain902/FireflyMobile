@@ -59,7 +59,10 @@ abstract class Rule with _$Rule, SyncBookkeeping {
       actionsJson: jsonListToColumn(attributes['actions']),
       active: jsonBool(attributes, 'active', orElse: true),
       strict: jsonBool(attributes, 'strict'),
-      stop: jsonBool(attributes, 'stop'),
+      // Firefly calls it `stop_processing`; reading `stop` left the flag
+      // permanently false on every rule mirrored to the phone.
+      stop: jsonBool(attributes, 'stop_processing') ??
+          jsonBool(attributes, 'stop'),
       orderIndex: jsonInt(attributes, 'order'),
       fireflyId: jsonApiId(member),
       updatedAt: updatedAt,
@@ -104,7 +107,7 @@ abstract class Rule with _$Rule, SyncBookkeeping {
       if (scope != null) 'scope': scope,
       'active': active,
       'strict': strict,
-      'stop': stop,
+      'stop_processing': stop,
       if (orderIndex != null) 'order': orderIndex,
       if (triggersJson != null)
         'triggers': jsonListFromColumn(triggersJson),

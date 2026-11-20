@@ -656,4 +656,38 @@ All entities below have full CRUD (`index` / `store` / `show` / `update` / `dest
 
 ---
 
+## 14. Visual Design System (delivered 2026-10-19)
+
+The four UI/UX mockups shipped in `docs/*.png` (dashboard, transactions,
+reports, budgets) were sampled pixel-by-pixel with PIL. The measured palette
+is the single source of truth in `app/lib/ui/theme/app_theme.dart`
+(`FireflyPalette`); the full `ThemeData` lives next to it (`FireflyTheme.dark`).
+
+| Token | Hex | Role |
+|---|---|---|
+| `background` | `#10160A` | scaffold background (dominant in all 4 shots) |
+| `surface` | `#1D2513` | cards, drawer, dialogs |
+| `surfaceElevated` | `#262F1C` | chips, pressed states |
+| `oliveFill` | `#43582B` | progress track, selected segments |
+| `primary` | `#A5D075` | accent lime: chips, "+amount", focus ring |
+| `primaryBright` | `#B0E080` | FAB / Save pill fill |
+| `negative` | `#F17C5C` | negative amounts, errors (also `colorScheme.error`) |
+| `chartGreen` / `chartAmber` | `#7BA055` / `#CCBB62` | Reports donut only |
+| `textPrimary` / `textMuted` / `textDim` | `#FFFFFF` / `#959892` / `#777C75` | text ramp |
+| `outline` | `#394426` | hairline borders, chip sides |
+| `onPrimary` | `#10160A` | text/icons on lime fills (dark-on-light, AA) |
+
+**Decisions:**
+- The design set is dark-only, so `FireflyTheme.dark` is wired into BOTH
+  `theme:` and `darkTheme:` in `FireflyApp` — system light mode still renders
+  the designed look. (Plan P2.1 said "dark + light"; no light mock exists, so
+  this is a deliberate pinned deviation.)
+- Semantic status colours stay semantic: `Colors.green`/`Colors.red` in
+  sync badges are untouched — the design reuses the same lime/coral for
+  positive/negative, and the two must not fight.
+- Every control is pill-shaped (`StadiumBorder` / 28dp radius), cards are flat
+  16dp-radius surfaces with no elevation/shadow — matching all four shots.
+
+---
+
 *End of design document.*

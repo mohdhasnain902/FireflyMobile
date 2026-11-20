@@ -25,9 +25,14 @@ void main() {
     'id': '42',
     'attributes': <String, dynamic>{
       'name': 'Rent',
-      'amount': '1200.000000000000',
+      // Firefly's real bill shape: bounds plus the average it computed. There
+      // is no single `amount` on the wire.
+      'amount_min': '1200.000000000000',
+      'amount_max': '1400.000000000000',
+      'amount_avg': '1300.000000000000',
       'currency_code': 'EUR',
       'currency_id': '1',
+      'date': '2026-11-15T00:00:00Z',
       'bill_direction': 'out',
       'repeat_freq': 'monthly',
       'skip': 3,
@@ -56,7 +61,9 @@ void main() {
       final bill = parse();
 
       expect(bill.name, 'Rent');
+      // The phone models one figure and mirrors the minimum bound.
       expect(bill.amount, '1200.000000000000');
+      expect(bill.date, DateTime.utc(2026, 11, 15));
       expect(bill.fireflyId, '42');
       expect(bill.remoteUpdatedAt, DateTime.utc(2026, 10, 11, 8));
       expect(bill.syncStatus, SyncStatus.synced);
@@ -76,7 +83,10 @@ void main() {
         <String, dynamic>{
           'type': 'bills',
           'id': '1',
-          'attributes': <String, dynamic>{'name': 'Bare', 'amount': '5.00'},
+          'attributes': <String, dynamic>{
+            'name': 'Bare',
+            'amount_min': '5.00',
+          },
         },
         id: 'x',
         updatedAt: localWrite,
@@ -84,6 +94,8 @@ void main() {
       );
 
       expect(bill.name, 'Bare');
+      expect(bill.amount, '5.00');
+      expect(bill.date, isNull);
       expect(bill.payDates, isNull);
       expect(bill.skip, 0);
       expect(bill.active, isTrue);
@@ -125,9 +137,11 @@ void main() {
 
       expect(attributes.keys, unorderedEquals(<String>[
         'name',
-        'amount',
+        'amount_min',
+        'amount_max',
         'currency_code',
-        'currency_id',
+        'transaction_currency_id',
+        'date',
         'bill_direction',
         'repeat_freq',
         'skip',
@@ -139,6 +153,9 @@ void main() {
         'auto_budget_type',
         'updated_at',
       ]));
+      expect(attributes['amount_min'], '1200.000000000000');
+      expect(attributes['amount_max'], '1200.000000000000');
+      expect(attributes['transaction_currency_id'], '1');
       expect(attributes.keys, isNot(contains('id')));
       expect(attributes.keys, isNot(contains('seq')));
       expect(attributes.keys, isNot(contains('sync_status')));

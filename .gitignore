@@ -20,10 +20,24 @@ infra/firefly/tmp/
 
 # Build output
 app/build/
+app/android/build/
+app/linux/flutter/ephemeral/
 app/.dart_tool/
 app/.flutter-plugins-dependencies
 app/.idea/
 app/*.iml
+**/__pycache__/
+*.pyc
+
+# Local run output and machine captures (never publish: logs and phone
+# screenshots can contain the real book's balances)
+app/run-logs/
+logs/
+artifacts/
+*.apk
+*.db
+*.db-wal
+*.db-shm
 
 # OS / editor noise
 .DS_Store

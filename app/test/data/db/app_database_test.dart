@@ -102,6 +102,33 @@ void main() {
       await db.close();
     });
 
+    test('transactions carry the Firefly journal options added in v4',
+        () async {
+      // The website's form has five extra dates plus a URL, an internal
+      // reference and a manual order. A pull used to drop them, so a phone
+      // write cleared them server-side; the columns must exist for a fresh
+      // install (v1 create + v2/v3/v4 migrations) just as for an upgrade.
+      final db = await openTestDatabase();
+      final columns = await db.rawQuery('PRAGMA table_info(transactions)');
+      final names = columns.map((c) => c['name']! as String).toSet();
+
+      expect(
+        names,
+        containsAll(<String>{
+          'external_id',
+          'interest_date',
+          'book_date',
+          'process_date',
+          'due_date',
+          'payment_date',
+          'external_url',
+          'internal_reference',
+          'order_index',
+        }),
+      );
+      await db.close();
+    });
+
     test('WAL mode is enabled on open', () async {
       // WAL requires a file-backed database; SQLite silently falls back to
       // `memory` for in-memory databases, so use a real temp file.
@@ -382,6 +409,63 @@ void main() {
       }
       final batch = await dao.getPendingBatch(2);
       expect(batch, hasLength(2));
+    });
+  });
+
+  group('migrations', () {
+    /// Builds a database frozen at schema [version] in [dir], the way an
+    /// already-installed build would have left it.
+    Future<String> frozenDb(Directory dir, int version) async {
+      final path = '${dir.path}/firefly_v$version.db';
+      final db = await databaseFactoryFfiNoIsolate.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: version,
+          onCreate: (db, _) async {
+            for (var v = 1; v <= version; v++) {
+              for (final statement in migrations[v]!) {
+                await db.execute(statement);
+              }
+            }
+          },
+        ),
+      );
+      await db.close();
+      return path;
+    }
+
+    test('v2 adds external_id and v3 backfills it by re-pulling', () async {
+      final dir = await Directory.systemTemp.createTemp('ff_migration');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = await frozenDb(dir, 1);
+
+      // A row mirrored by v1: no external_id column, LWW cursor set.
+      final v1 = await databaseFactoryFfiNoIsolate.openDatabase(path);
+      await v1.insert('transactions', {
+        'id': 'tx-1',
+        'journal_id': '3481',
+        'type': 'transfer',
+        'description': 'parity test',
+        'date': '2026-11-16T05:00:00.000Z',
+        'amount': '100.000000000000',
+        'remote_updated_at': 1794999999000,
+        'updated_at': 1,
+        'seq': 1,
+        'sync_status': 'synced',
+      });
+      await v1.close();
+
+      final db = await openAppDatabase(
+        factory: databaseFactoryFfiNoIsolate,
+        path: path,
+      );
+      expect(await db.getVersion(), latestSchemaVersion);
+
+      final row = (await db.query('transactions', where: "id = 'tx-1'")).single;
+      expect(row.containsKey('external_id'), isTrue);
+      // Cleared so the next pull rewrites (and backfills) every mirrored leg.
+      expect(row['remote_updated_at'], isNull);
+      await db.close();
     });
   });
 }

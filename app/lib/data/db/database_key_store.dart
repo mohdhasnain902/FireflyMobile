@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -85,6 +86,52 @@ class SecureStorageDatabaseKeyStore implements DatabaseKeyStore {
   Future<void> deleteKey() => _storage.delete(key: _storageKey);
 }
 
+/// [DatabaseKeyStore] backed by an owner-only key file next to the database.
+///
+/// Desktop-only fallback: flutter_secure_storage ships no Linux
+/// implementation, so without this store a Linux run would throw on first
+/// database open. The key sits beside `firefly.db` as `<path>.key` and is
+/// chmod'ed to 0600 so it stays owner-only on a shared machine. Losing the
+/// file orphans the database, exactly like clearing secure storage on
+/// Android.
+class FileDatabaseKeyStore implements DatabaseKeyStore {
+  /// Creates a store whose key file is derived from the database-path
+  /// callback — the key lives at `<path>.key`.
+  new(this._dbPath);
+
+  final Future<String> Function() _dbPath;
+
+  Future<File> _keyFile() async => File('${await _dbPath()}.key');
+
+  @override
+  Future<String> getOrCreateKey() async {
+    final file = await _keyFile();
+    if (file.existsSync()) {
+      return (await file.readAsString()).trim();
+    }
+
+    final fresh = generateDatabaseKey();
+    await file.parent.create(recursive: true);
+    await file.writeAsString(fresh, flush: true);
+    // dart:io exposes no chmod API, so shell out once. Process.run only
+    // throws if the binary is missing (chmod always exists on Linux); a
+    // non-zero exit still returns a result, so there is nothing to catch.
+    await Process.run('chmod', ['600', file.path]);
+    // Write-then-verify, matching SecureStorageDatabaseKeyStore: if two
+    // launches race on first open, the loser adopts the winner's key rather
+    // than overwrite it and orphan the DB.
+    return (await file.readAsString()).trim();
+  }
+
+  @override
+  Future<void> deleteKey() async {
+    final file = await _keyFile();
+    if (file.existsSync()) {
+      await file.delete();
+    }
+  }
+}
+
 /// 32 random bytes, URL-safe base64 encoded (44 chars: 43 payload chars
 /// plus one trailing `=` padding character — Dart's encoder always pads to
 /// a multiple of four).
@@ -102,7 +149,17 @@ final Random _secureRandom = Random.secure();
 ///
 /// [getDatabasesPath] is the platform-sanctioned location and needs no extra
 /// permissions on Android.
+///
+/// Linux desktops have no sqflite platform channel, so the channel-backed
+/// [getDatabasesPath] cannot answer there; the database lands in the XDG
+/// data directory instead (`~/.local/share/firefly_mobile/firefly.db`).
 Future<String> defaultDatabasePath() async {
+  if (Platform.isLinux) {
+    final home = Platform.environment['HOME'] ?? '';
+    final dir = '$home/.local/share/firefly_mobile';
+    await Directory(dir).create(recursive: true);
+    return '$dir/firefly.db';
+  }
   final dir = await getDatabasesPath();
   return '$dir/firefly.db';
 }

@@ -11,6 +11,12 @@ part 'subscription.freezed.dart';
 /// [periods] stores Firefly's computed period breakdown as the JSON array it
 /// sends. [transactionJournalId] links a subscription back to the journal that
 /// created it, matching the schema column of the same name.
+///
+/// A subscription is serialised by Firefly with the **bill** shape: its name
+/// arrives as `name` (never `title`), its amount as `amount_min`/`amount_max`
+/// (there is no `amount`), and its next date as `date` (never `next_date`).
+/// Reading the wrong keys left every subscription on the phone with a blank
+/// title, a zero amount and no next date.
 @freezed
 abstract class Subscription with _$Subscription, SyncBookkeeping {
   /// Builds a subscription from its local and remote fields.
@@ -50,17 +56,26 @@ abstract class Subscription with _$Subscription, SyncBookkeeping {
     final attributes = jsonApiAttributes(member);
     return Subscription(
       id: id,
-      title: jsonString(attributes, 'title') ?? '',
-      amount: jsonDecimal(attributes, 'amount') ?? '0',
+      title: jsonString(attributes, 'name') ??
+          jsonString(attributes, 'title') ??
+          '',
+      amount: jsonDecimal(attributes, 'amount_min') ??
+          jsonDecimal(attributes, 'amount') ??
+          jsonDecimal(attributes, 'amount_avg') ??
+          '0',
       currencyCode: jsonString(attributes, 'currency_code'),
-      currencyId: jsonString(attributes, 'currency_id'),
+      // Reads `transaction_currency_id` because that is the key the endpoint
+      // accepts back; `currency_id` is accepted for tolerance.
+      currencyId: jsonString(attributes, 'currency_id') ??
+          jsonString(attributes, 'transaction_currency_id'),
       transactionJournalId: jsonString(
         attributes,
         'transaction_journal_id',
       ),
       repeatFreq: jsonString(attributes, 'repeat_freq') ?? 'monthly',
       active: jsonBool(attributes, 'active', orElse: true),
-      nextDate: isoJsonToDateTime(attributes['next_date']),
+      nextDate: isoJsonToDateTime(attributes['date']) ??
+          isoJsonToDateTime(attributes['next_date']),
       endDate: isoJsonToDateTime(attributes['end_date']),
       periods: jsonListToColumn(attributes['periods']),
       method: jsonString(attributes, 'method'),
@@ -102,15 +117,16 @@ abstract class Subscription with _$Subscription, SyncBookkeeping {
     type: 'subscriptions',
     id: fireflyId,
     attributes: <String, dynamic>{
-      'title': title,
-      'amount': amount,
+      'name': title,
+      'amount_min': amount,
+      'amount_max': amount,
       if (currencyCode != null) 'currency_code': currencyCode,
-      if (currencyId != null) 'currency_id': currencyId,
+      if (currencyId != null) 'transaction_currency_id': currencyId,
       if (transactionJournalId != null)
         'transaction_journal_id': transactionJournalId,
       'repeat_freq': repeatFreq,
       'active': active,
-      if (nextDate != null) 'next_date': dateTimeToJson(nextDate),
+      if (nextDate != null) 'date': dateTimeToJson(nextDate),
       if (endDate != null) 'end_date': dateTimeToJson(endDate),
       if (periods != null) 'periods': jsonListFromColumn(periods),
       if (method != null) 'method': method,

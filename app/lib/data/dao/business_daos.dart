@@ -128,7 +128,23 @@ class PiggyBankDao extends EntityDao<PiggyBank> {
       );
 }
 
-/// `recurrences` — stored and synced schedules; never executed on device.
+/// `recurrences` — recurring transaction definitions plus their 1:N
+/// `recurrence_repetitions` frequency rows.
+///
+/// Firefly's frequency model is nested: the parent's `recurrences` row carries
+/// no repetition columns, so every content write (insert/upsert/update)
+/// rewrites the children wholesale from the entity's in-memory list, and every
+/// read re-joins them before handing the entity back — otherwise
+/// `Recurrence.repetitions` would stay empty after any load and `toJsonApi`
+/// would silently push a recurrence without its schedule.
+///
+/// Child rewrites follow the server's own update semantics
+/// (RecurrenceUpdateService): an empty in-memory list is treated as "leave
+/// children untouched" (the server ignores `repetitions: []` on update), so a
+/// half-loaded entity can never wipe a schedule. `patch`/`softDelete` stay
+/// inherited — sync-bookkeeping writes must not touch schedule data. Because
+/// the repository builds this DAO on the caller's executor, child rewrites
+/// inside the sync engine's transaction are atomic with the parent row.
 class RecurrenceDao extends EntityDao<Recurrence> {
   /// Binds the DAO to an open connection or transaction.
   new(DatabaseExecutor executor)
@@ -138,6 +154,142 @@ class RecurrenceDao extends EntityDao<Recurrence> {
         decode: Recurrence.fromRow,
         encode: (e) => e.toRow(),
       );
+
+  /// Child table of schedule rows; always accessed through the same executor
+  /// as the parent write/read so both stay atomic inside a transaction.
+  static const String _childTable = 'recurrence_repetitions';
+
+  @override
+  Future<void> insert(Recurrence entity, [DatabaseExecutor? executor]) async {
+    final exec = executor ?? db;
+    await super.insert(entity, exec);
+    await _rewriteRepetitions(entity, exec);
+  }
+
+  @override
+  Future<void> upsert(Recurrence entity, [DatabaseExecutor? executor]) async {
+    final exec = executor ?? db;
+    await super.upsert(entity, exec);
+    await _rewriteRepetitions(entity, exec);
+  }
+
+  @override
+  Future<int> update(Recurrence entity, [DatabaseExecutor? executor]) async {
+    final exec = executor ?? db;
+    final changed = await super.update(entity, exec);
+    // Zero rows means the parent vanished; rewriting its schedule would be
+    // writing an edit for a row the device no longer has.
+    if (changed > 0) await _rewriteRepetitions(entity, exec);
+    return changed;
+  }
+
+  @override
+  Future<void> hardDelete(String id, [DatabaseExecutor? executor]) async {
+    final exec = executor ?? db;
+    await super.hardDelete(id, exec);
+    await exec.delete(
+      _childTable,
+      where: 'recurrence_id = ?',
+      whereArgs: <Object?>[id],
+    );
+  }
+
+  @override
+  Future<Recurrence?> getById(String id, [DatabaseExecutor? executor]) async {
+    final exec = executor ?? db;
+    final entity = await super.getById(id, exec);
+    if (entity == null) return null;
+    return (await _attachRepetitions(<Recurrence>[entity], exec)).single;
+  }
+
+  @override
+  Future<Recurrence?> getByFireflyId(
+    String fireflyId, [
+    DatabaseExecutor? executor,
+  ]) async {
+    final exec = executor ?? db;
+    final entity = await super.getByFireflyId(fireflyId, exec);
+    if (entity == null) return null;
+    return (await _attachRepetitions(<Recurrence>[entity], exec)).single;
+  }
+
+  @override
+  Future<List<Recurrence>> getAll({
+    bool includeDeleted = false,
+    String orderBy = 'updated_at DESC',
+    int? limit,
+    int? offset,
+    DatabaseExecutor? executor,
+  }) async {
+    final exec = executor ?? db;
+    final entities = await super.getAll(
+      includeDeleted: includeDeleted,
+      orderBy: orderBy,
+      limit: limit,
+      offset: offset,
+      executor: exec,
+    );
+    return await _attachRepetitions(entities, exec);
+  }
+
+  @override
+  Future<List<Recurrence>> getPending({
+    String orderBy = 'updated_at ASC',
+    int? limit,
+    int? offset,
+    DatabaseExecutor? executor,
+  }) async {
+    final exec = executor ?? db;
+    final entities = await super.getPending(
+      orderBy: orderBy,
+      limit: limit,
+      offset: offset,
+      executor: exec,
+    );
+    return await _attachRepetitions(entities, exec);
+  }
+
+  /// Replaces [entity]'s children in [exec] with its in-memory repetitions.
+  ///
+  /// Deliberately a no-op for an empty list: the server ignores an empty
+  /// `repetitions` array on update rather than dropping the schedule, and a
+  /// half-loaded local entity must never be able to wipe real children.
+  Future<void> _rewriteRepetitions(
+    Recurrence entity,
+    DatabaseExecutor exec,
+  ) async {
+    if (entity.repetitions.isEmpty) return;
+    await exec.delete(
+      _childTable,
+      where: 'recurrence_id = ?',
+      whereArgs: <Object?>[entity.id],
+    );
+    for (final row in entity.repetitionRows()) {
+      await exec.insert(_childTable, row);
+    }
+  }
+
+  /// Joins the child rows for [entities] in one query (no N+1) and attaches
+  /// them via [Recurrence.loadRepetitions]. A recurrence with no children
+  /// returns with an empty list — its schedule is simply empty.
+  Future<List<Recurrence>> _attachRepetitions(
+    List<Recurrence> entities,
+    DatabaseExecutor exec,
+  ) async {
+    if (entities.isEmpty) return entities;
+    final ids = entities.map((entity) => entity.id).toList();
+    final placeholders = List.filled(ids.length, '?').join(',');
+    final rows = await exec.query(
+      _childTable,
+      where: 'recurrence_id IN ($placeholders)',
+      whereArgs: ids,
+      orderBy: 'recurrence_id, ord',
+    );
+    if (rows.isEmpty) return entities;
+    return entities
+        .map((entity) => entity.loadRepetitions(rows))
+        .toList();
+  }
 }
 
 /// `rules` — trigger/action definitions, stored and never executed on device.

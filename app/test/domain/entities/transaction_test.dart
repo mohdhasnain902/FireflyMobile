@@ -53,6 +53,15 @@ void main() {
           'reconciled': false,
           'foreign_amount': '45.00',
           'foreign_currency_code': 'USD',
+          'external_id': 'BANK-7788',
+          'interest_date': '2026-10-12T00:00:00Z',
+          'book_date': '2026-10-13T00:00:00Z',
+          'process_date': '2026-10-14T00:00:00Z',
+          'due_date': '2026-10-15T00:00:00Z',
+          'payment_date': '2026-10-16T00:00:00Z',
+          'external_url': 'https://example.com/receipt/7788',
+          'internal_reference': 'REF-42',
+          'order': 3,
         },
       ],
       'updated_at': '2026-10-11T08:00:00Z',
@@ -247,6 +256,15 @@ void main() {
         'reconciled',
         'foreign_amount',
         'foreign_currency_code',
+        'external_id',
+        'interest_date',
+        'book_date',
+        'process_date',
+        'due_date',
+        'payment_date',
+        'external_url',
+        'internal_reference',
+        'order',
         // destination_id is null in the fixture, so it is omitted
         // (optional legs follow the same omit-if-null rule as every entity).
       ]));
@@ -311,6 +329,35 @@ void main() {
       expect(row['sync_status'], 'synced');
       expect(row['description'], 'Weekly shop');
       expect(row['amount'], '42.500000000000');
+    });
+
+    test('the Options block survives both round trips', () {
+      // Firefly's transaction form carries these eight per-journal fields; both
+      // directions must keep them so a phone write cannot clear them.
+      final original = parse();
+
+      expect(original.externalId, 'BANK-7788');
+      expect(original.interestDate, DateTime.utc(2026, 10, 12));
+      expect(original.bookDate, DateTime.utc(2026, 10, 13));
+      expect(original.processDate, DateTime.utc(2026, 10, 14));
+      expect(original.dueDate, DateTime.utc(2026, 10, 15));
+      expect(original.paymentDate, DateTime.utc(2026, 10, 16));
+      expect(original.externalUrl, 'https://example.com/receipt/7788');
+      expect(original.internalReference, 'REF-42');
+      expect(original.order, 3);
+
+      final leg = ((original.toJsonApi()['attributes']!
+              as Map<String, dynamic>)['transactions']!
+          as List<dynamic>).single! as Map<String, dynamic>;
+      expect(leg['interest_date'], '2026-10-12T00:00:00.000Z');
+      expect(leg['external_url'], 'https://example.com/receipt/7788');
+      expect(leg['internal_reference'], 'REF-42');
+      expect(leg['order'], 3);
+
+      final row = Transaction.fromRow(original.toRow());
+      expect(row, original);
+      expect(original.toRow()['order_index'], 3);
+      expect(original.toRow()['book_date'], '2026-10-13T00:00:00.000Z');
     });
 
     test('an unparseable timestamp never throws', () {

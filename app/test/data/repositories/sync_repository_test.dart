@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:firefly_mobile/data/dao/device_meta_dao.dart';
 import 'package:firefly_mobile/data/dao/op_log_dao.dart';
-import 'package:firefly_mobile/data/repositories/entity_reader.dart';
 import 'package:firefly_mobile/data/repositories/entity_repositories.dart';
 import 'package:firefly_mobile/data/repositories/sync_repository.dart';
 import 'package:firefly_mobile/domain/entities/account.dart';
@@ -242,24 +241,18 @@ void main() {
     expect((await accounts.getById(account.id))!.type, 'asset');
   });
 
-  test('CurrencyRepository offers reads and no write surface', () async {
-    final repo = CurrencyRepository(db: db);
-    expect(repo, isA<EntityReader<Currency>>());
-    // Pull-only by design: it must not reach the queue at all, and a write
-    // method that would throw at runtime is worse than an absent one.
-    expect(repo, isNot(isA<SyncRepository<dynamic>>()));
+  test('CurrencyRepository offers reads and writes', () async {
+    final repo = CurrencyRepository(db: db, meta: meta);
+    expect(repo, isA<SyncRepository<Currency>>());
 
-    final currency = Currency(
-      id: 'cur1',
+    final created = await repo.create((id, updatedAt, seq) => Currency(
+      id: id,
       code: 'EUR',
       name: 'Euro',
-      updatedAt: DateTime.now().toUtc(),
-      seq: 1,
-    );
-    await db.insert('currencies', currency.toRow());
-
-    expect((await repo.getById('cur1'))!.code, 'EUR');
-    expect(await repo.count(), 1);
-    expect(await opLog.pendingCount(), 0);
+      updatedAt: updatedAt,
+      seq: seq,
+    ));
+    expect((await repo.getById(created.id))!.code, 'EUR');
+    expect(await opLog.pendingCount(), 1);
   });
 }

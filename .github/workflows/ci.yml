@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FLUTTER_VERSION: 3.47.7
+  FLUTTER_TOOLS_PATH: /mnt/data/opencode/tools/flutter
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        run: |
+          echo "FLUTTER_ROOT=$FLUTTER_TOOLS_PATH" >> $GITHUB_ENV
+          echo "$FLUTTER_TOOLS_PATH/bin" >> $GITHUB_PATH
+
+      - name: Verify Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: app
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+        working-directory: app
+
+      - name: Static analysis
+        run: flutter analyze
+        working-directory: app
+
+      - name: Run unit + widget tests
+        run: flutter test
+        working-directory: app
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+        working-directory: app
+
+  golden-fixture-diff:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        run: |
+          echo "FLUTTER_ROOT=$FLUTTER_TOOLS_PATH" >> $GITHUB_ENV
+          echo "$FLUTTER_TOOLS_PATH/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: app
+
+      - name: Run API fixture smoke test (contract guard)
+        run: flutter test test/api_fixtures_smoke_test.dart
+        working-directory: app
+
+  release-apk:
+    runs-on: ubuntu-latest
+    needs: [test, golden-fixture-diff]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        run: |
+          echo "FLUTTER_ROOT=$FLUTTER_TOOLS_PATH" >> $GITHUB_ENV
+          echo "$FLUTTER_TOOLS_PATH/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: app
+
+      - name: Configure release signing
+        run: |
+          mkdir -p android/app
+          echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 -d > android/app/release-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.RELEASE_STORE_PASSWORD }}
+          keyPassword=${{ secrets.RELEASE_KEY_PASSWORD }}
+          keyAlias=release
+          storeFile=release-keystore.jks
+          EOF
+
+      - name: Build release APK
+        run: flutter build apk --release
+        working-directory: app
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefly-mobile-release-apk
+          path: app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30

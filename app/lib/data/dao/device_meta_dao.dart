@@ -47,6 +47,38 @@ class DeviceMetaDao {
   /// stored. The token itself lives in secure storage; this is only its key.
   static const fireflyPatRefKey = 'firefly_pat_ref';
 
+  /// Key under which the PC backup sidecar's base URL is stored (P4
+  /// backup). Non-secret like the Firefly URL, so it lives in `device_meta`.
+  static const backupUrlKey = 'backup_url';
+
+  /// Key under which a reference to the sidecar trigger token is stored.
+  /// Follows the PAT split: only the ref lives here, the secret itself is in
+  /// secure storage.
+  static const backupTokenRefKey = 'backup_token_ref';
+
+  /// ISO 4217 code of the preferred display/secondary currency for showing
+  /// converted amounts alongside the original (e.g. PKR, USD). Empty/unset
+  /// means no secondary display.
+  static const displayCurrencyKey = 'display_currency';
+
+  /// Cached exchange-rate payload (JSON) fetched from the rates API, keyed by
+  /// base currency code in lowercase (fawazahmed0 schema: {date, <base>:{...}}).
+  /// Stored as a JSON object mapping base->payload for quick local lookups.
+  static const exchangeRatesCacheKey = 'exchange_rates_cache';
+
+  /// Epoch-ms timestamp when [exchangeRatesCacheKey] was last refreshed.
+  static const exchangeRatesFetchedAtKey = 'exchange_rates_fetched_at';
+
+  /// Manually entered exchange rates, as JSON `{FROM: {TO: rate}}` where the
+  /// rate means "1 FROM = rate TO".
+  ///
+  /// Kept apart from [exchangeRatesCacheKey] so a rates refresh never erases
+  /// a hand-entered pair, and so both directions of a pair can be stored
+  /// independently (a custom currency like BTC is routinely quoted as
+  /// 1 BTC = 65,000 USD and 65,000.34 USD = 1 BTC — the inverses need not be
+  /// exact reciprocals, and the user enters both).
+  static const exchangeRatesManualKey = 'exchange_rates_manual';
+
   /// Returns the value stored under [key] on [executor], or null when unset.
   Future<String?> getIn(DatabaseExecutor executor, String key) async {
     final rows = await executor.query(

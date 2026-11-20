@@ -64,6 +64,25 @@ final class ConflictFailure extends Failure {
   const new(super.message, {super.code = 'sync.conflict', super.cause});
 }
 
+/// Server answered 404 — the referenced row does not exist there.
+///
+/// Sync-specific: a PUSH that hits 404 follows DESIGN §7.4 — the local row is
+/// re-sent as a create next cycle. A pull-side 404 should not normally happen
+/// (list pages only return existing rows).
+final class NotFoundFailure extends Failure {
+  /// Creates a not-found failure.
+  const new(super.message, {super.code = 'api.not_found', super.cause});
+}
+
+/// Server answered 5xx — Firefly (or its reverse proxy) failed on its side.
+///
+/// Retryable: the API client re-sends the request with backoff before
+/// surfacing this (DESIGN §7.1).
+final class ServerFailure extends Failure {
+  /// Creates a server-side failure.
+  const new(super.message, {super.code = 'api.server_error', super.cause});
+}
+
 /// Bucket for anything unexpected that still has to surface to the UI.
 final class UnknownFailure extends Failure {
   /// Creates a catch-all failure.
